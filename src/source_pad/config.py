@@ -28,5 +28,5 @@ class Config:
             embedding_model=os.environ.get("EMBEDDING_MODEL", "nomic-embed-text"),
             chroma_path=os.environ.get("CHROMA_PATH", "./data/chroma"),
             host=os.environ.get("HOST", "0.0.0.0"),
-            port=int(os.environ.get("PORT", "8080")),
+            port=int(os.environ.get("PORT", "8090")),
         )

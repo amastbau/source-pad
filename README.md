@@ -48,7 +48,7 @@ source-pad query "What is the architecture of source-pad?"
 
 # Web UI
 source-pad serve
-# Open http://localhost:8080
+# Open http://localhost:8090
 ```
 
 ## Using with hybrid-llm
@@ -108,7 +108,7 @@ source-pad serve
 | `EMBEDDING_MODEL` | `nomic-embed-text` | Ollama embedding model |
 | `CHROMA_PATH` | `./data/chroma` | ChromaDB storage path |
 | `GITHUB_TOKEN` | — | GitHub PAT for indexing repos |
-| `PORT` | `8080` | Web UI port |
+| `PORT` | `8090` | Web UI port |
 
 ## CLI commands
 
