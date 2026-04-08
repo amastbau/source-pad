@@ -1,5 +1,6 @@
 """Web UI: FastAPI server with streaming chat."""
 
+import asyncio
 import json
 from pathlib import Path
 from typing import AsyncGenerator
@@ -81,8 +82,9 @@ async def stats():
 @app.post("/api/chat/stream")
 async def chat_stream(msg: ChatMessage):
     rag = get_rag()
+    message = msg.message  # capture before passing to sync generator
 
-    async def generate() -> AsyncGenerator[str, None]:
+    def generate():
         global _history
 
         def debug(step, data):
@@ -96,15 +98,15 @@ async def chat_stream(msg: ChatMessage):
         })
 
         # Query
-        yield debug("query", {"query": msg.message})
+        yield debug("query", {"query": message})
 
         # Get RAG context
         context = ""
         try:
             yield debug("rag_start", {"status": "Searching vector store..."})
-            context = rag.get_context(msg.message, max_results=5)
+            context = rag.get_context(message, max_results=5)
             if context:
-                results = rag.search(msg.message, top_k=5)
+                results = rag.search(message, top_k=5)
                 sources = [
                     {
                         "url": r["metadata"].get("url", r.get("doc_id", "?")),
@@ -133,7 +135,7 @@ async def chat_stream(msg: ChatMessage):
             messages[0]["content"] += f"\n\n{context}"
         for h in _history[-10:]:
             messages.append(h)
-        messages.append({"role": "user", "content": msg.message})
+        messages.append({"role": "user", "content": message})
 
         yield debug("llm_prompt", {
             "message_count": len(messages),
@@ -170,7 +172,7 @@ async def chat_stream(msg: ChatMessage):
                     yield f"data: {json.dumps({'type': 'content', 'content': chunk.delta})}\n\n"
 
             elapsed = time.time() - t0
-            _history.append({"role": "user", "content": msg.message})
+            _history.append({"role": "user", "content": message})
             _history.append({"role": "assistant", "content": full_response})
 
             yield debug("llm_done", {
