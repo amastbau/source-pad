@@ -6,13 +6,15 @@ Built on [LlamaIndex](https://www.llamaindex.ai/) + [ChromaDB](https://www.trych
 
 ## Quick start
 
-### 1. Start an LLM
+### 1. Start an LLM + embeddings
 
 See the [hybrid-llm Getting Started guide](https://github.com/amastbau/hybrid-llm/blob/main/GETTING_STARTED.md) for all options (PC, phone, model selection, Llama Stack).
 
-source-pad also needs an embedding model via Ollama:
+**Ollama is always required** for embeddings, even when using the phone LLM for chat:
 ```bash
-ollama pull nomic-embed-text
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull nomic-embed-text   # required for indexing (always)
+ollama pull llama3.1:8b        # optional — only if using Ollama as your chat LLM
 ```
 
 ### 2. Install source-pad

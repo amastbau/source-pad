@@ -12,7 +12,7 @@ Simple RAG chatbot for code. Works with local LLMs (Ollama or OpenAI-compatible)
 
 ```bash
 uv sync                                # install
-source-pad serve                       # web UI at :8080
+source-pad serve                       # web UI at :8090
 source-pad index dir <path>            # index local files
 source-pad index github <owner/repo>   # index GitHub repo
 source-pad query "question"            # CLI query
