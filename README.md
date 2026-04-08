@@ -16,9 +16,9 @@ ollama pull nomic-embed-text   # embedding model (required for indexing)
 ```
 
 **Option B: Phone via hybrid-llm**
+
+See the [hybrid-llm Getting Started guide](https://github.com/amastbau/hybrid-llm/blob/main/GETTING_STARTED.md) for phone setup, then:
 ```bash
-cd /path/to/hybrid-llm
-python deploy_llm.py
 # Ollama still needed on PC for embeddings:
 ollama pull nomic-embed-text
 ```
