@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>source-pad</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <h1>source-pad</h1>
+            <div class="status">
+                <span id="doc-count">...</span> docs indexed
+                <button id="btn-index" title="Index a source">+ Index</button>
+                <button id="btn-clear" title="Clear all">Clear</button>
+            </div>
+        </header>
+
+        <div class="chat" id="chat"></div>
+
+        <div class="input-bar">
+            <textarea id="input" placeholder="Ask a question about your code..." rows="1"></textarea>
+            <button id="btn-send">Send</button>
+        </div>
+    </div>
+
+    <!-- Index dialog -->
+    <dialog id="index-dialog">
+        <h3>Index a source</h3>
+        <div class="dialog-body">
+            <label>
+                <input type="radio" name="idx-type" value="github" checked> GitHub repo
+            </label>
+            <label>
+                <input type="radio" name="idx-type" value="dir"> Local directory
+            </label>
+            <input type="text" id="idx-input" placeholder="owner/repo (e.g. amastbau/hybrid-llm)">
+            <div class="dialog-actions">
+                <button id="idx-cancel">Cancel</button>
+                <button id="idx-go">Index</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
