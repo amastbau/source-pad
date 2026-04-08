@@ -3,9 +3,12 @@ const input = document.getElementById('input');
 const btnSend = document.getElementById('btn-send');
 const btnIndex = document.getElementById('btn-index');
 const btnClear = document.getElementById('btn-clear');
+const btnToggleTrace = document.getElementById('btn-toggle-trace');
 const docCount = document.getElementById('doc-count');
 const dialog = document.getElementById('index-dialog');
 const idxInput = document.getElementById('idx-input');
+const tracePanel = document.getElementById('trace-panel');
+const traceContent = document.getElementById('trace-content');
 
 // Auto-resize textarea
 input.addEventListener('input', () => {
@@ -22,6 +25,12 @@ input.addEventListener('keydown', (e) => {
 });
 
 btnSend.addEventListener('click', sendMessage);
+
+// Trace panel toggle
+btnToggleTrace.addEventListener('click', () => {
+    tracePanel.classList.toggle('hidden');
+    btnToggleTrace.classList.toggle('active');
+});
 
 // Index dialog
 btnIndex.addEventListener('click', () => dialog.showModal());
@@ -86,6 +95,9 @@ btnClear.addEventListener('click', async () => {
     refreshStats();
 });
 
+// Clear trace
+document.getElementById('btn-clear-trace').addEventListener('click', clearTrace);
+
 // Stats
 async function refreshStats() {
     try {
@@ -97,7 +109,93 @@ async function refreshStats() {
     }
 }
 
-// Add a message to the chat
+// === Trace panel functions ===
+
+function clearTrace() {
+    traceContent.innerHTML = '<div class="trace-status" id="trace-status">Waiting for query...</div>';
+}
+
+function setTraceStatus(text, active = false) {
+    const el = document.getElementById('trace-status');
+    if (el) {
+        el.textContent = text;
+        el.className = 'trace-status' + (active ? ' active' : '');
+    }
+}
+
+function addTraceSection(type, title, data) {
+    // Remove "waiting" status
+    const status = document.getElementById('trace-status');
+    if (status && status.textContent === 'Waiting for query...') {
+        status.remove();
+    }
+
+    const id = 'ts-' + Date.now() + Math.random().toString(36).slice(2, 5);
+    const section = document.createElement('div');
+    section.className = 'trace-section';
+    section.id = id;
+
+    let bodyHtml = '';
+    if (typeof data === 'object' && data !== null) {
+        bodyHtml = formatTraceData(data);
+    } else {
+        bodyHtml = `<pre>${escapeHtml(String(data))}</pre>`;
+    }
+
+    section.innerHTML = `
+        <div class="trace-section-header ${type}" onclick="toggleTrace('${id}')">
+            <span>${title}</span>
+            <span class="trace-toggle">&#9660;</span>
+        </div>
+        <div class="trace-section-body">${bodyHtml}</div>
+    `;
+
+    traceContent.appendChild(section);
+    traceContent.scrollTop = traceContent.scrollHeight;
+}
+
+function formatTraceData(data) {
+    let html = '';
+    for (const [key, value] of Object.entries(data)) {
+        if (key === 'messages' && Array.isArray(value)) {
+            html += `<div class="trace-key">messages (${value.length}):</div>`;
+            for (const msg of value) {
+                html += `<div class="trace-msg-role">${escapeHtml(msg.role || '?')} (${msg.content_length || '?'} chars)</div>`;
+                if (msg.preview) {
+                    html += `<div class="trace-msg-preview">${escapeHtml(msg.preview)}</div>`;
+                }
+            }
+        } else if (Array.isArray(value)) {
+            html += `<div class="trace-key">${escapeHtml(key)}:</div>`;
+            for (const item of value) {
+                html += `<pre>  ${escapeHtml(String(item))}</pre>`;
+            }
+        } else if (typeof value === 'object' && value !== null) {
+            html += `<div class="trace-key">${escapeHtml(key)}:</div>`;
+            html += `<pre>${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+        } else {
+            html += `<div><span class="trace-key">${escapeHtml(key)}:</span><span class="trace-value">${escapeHtml(String(value))}</span></div>`;
+        }
+    }
+    return html;
+}
+
+window.toggleTrace = function(id) {
+    const section = document.getElementById(id);
+    if (!section) return;
+    const body = section.querySelector('.trace-section-body');
+    const toggle = section.querySelector('.trace-toggle');
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        toggle.innerHTML = '&#9660;';
+    } else {
+        body.style.display = 'none';
+        toggle.innerHTML = '&#9654;';
+    }
+};
+
+// === Chat functions ===
+
 function addMessage(role, content, isError = false) {
     const div = document.createElement('div');
     div.className = `message ${role}`;
@@ -127,6 +225,10 @@ async function sendMessage() {
     input.value = '';
     input.style.height = 'auto';
     btnSend.disabled = true;
+
+    // Clear trace for new query
+    clearTrace();
+    setTraceStatus('Processing query...', true);
 
     addMessage('user', text);
 
@@ -164,18 +266,51 @@ async function sendMessage() {
 
             for (const line of lines) {
                 if (!line.startsWith('data: ')) continue;
-                const data = JSON.parse(line.slice(6));
+                let data;
+                try { data = JSON.parse(line.slice(6)); } catch { continue; }
 
                 if (data.type === 'content') {
                     fullContent += data.content;
                     contentDiv.innerHTML = marked.parse(fullContent);
                     chat.scrollTop = chat.scrollHeight;
+
                 } else if (data.type === 'sources') {
                     sources = data.sources;
+
+                } else if (data.type === 'debug') {
+                    // Route debug events to the trace panel
+                    const step = data.step || 'info';
+                    const traceData = data.data || {};
+
+                    if (step === 'system_info') {
+                        addTraceSection('system', 'System Info', traceData);
+                    } else if (step === 'query') {
+                        addTraceSection('query', 'User Query', traceData);
+                    } else if (step === 'rag_start') {
+                        setTraceStatus('Searching RAG...', true);
+                        addTraceSection('rag', 'RAG Search', traceData);
+                    } else if (step === 'rag_results') {
+                        addTraceSection('rag', `RAG Results (${traceData.matches || 0} matches)`, traceData);
+                    } else if (step === 'rag_error') {
+                        addTraceSection('error', 'RAG Error', traceData);
+                    } else if (step === 'llm_prompt') {
+                        setTraceStatus('Generating with LLM...', true);
+                        addTraceSection('llm', 'LLM Prompt', traceData);
+                    } else if (step === 'llm_start') {
+                        addTraceSection('llm', 'LLM Streaming', traceData);
+                    } else if (step === 'llm_done') {
+                        setTraceStatus('Done', false);
+                        addTraceSection('llm', 'LLM Complete', traceData);
+                    } else if (step === 'llm_error') {
+                        addTraceSection('error', 'LLM Error', traceData);
+                    }
+
                 } else if (data.type === 'error') {
                     contentDiv.innerHTML = `<div class="error">${escapeHtml(data.error)}</div>`;
+                    addTraceSection('error', 'Error', { error: data.error, type: data.error_type });
+
                 } else if (data.type === 'rag_error') {
-                    // RAG error is non-fatal, continue
+                    addTraceSection('error', 'RAG Error', { error: data.error });
                 }
             }
         }
@@ -196,6 +331,7 @@ async function sendMessage() {
 
     } catch (e) {
         contentDiv.innerHTML = `<div class="error">Connection error: ${escapeHtml(e.message)}</div>`;
+        addTraceSection('error', 'Network Error', { error: e.message });
     }
 
     btnSend.disabled = false;
@@ -205,3 +341,5 @@ async function sendMessage() {
 // Init
 refreshStats();
 input.focus();
+// Show trace panel by default
+btnToggleTrace.classList.add('active');

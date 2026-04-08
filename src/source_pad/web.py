@@ -85,8 +85,23 @@ async def chat_stream(msg: ChatMessage):
     async def generate() -> AsyncGenerator[str, None]:
         global _history
 
+        def debug(step, data):
+            return f"data: {json.dumps({'type': 'debug', 'step': step, 'data': data})}\n\n"
+
+        # System info
+        yield debug("system_info", {
+            "llm": f"{rag.config.llm_provider}/{rag.config.llm_model}",
+            "embeddings": f"ollama/{rag.config.embedding_model}",
+            "documents": rag.doc_count(),
+        })
+
+        # Query
+        yield debug("query", {"query": msg.message})
+
         # Get RAG context
+        context = ""
         try:
+            yield debug("rag_start", {"status": "Searching vector store..."})
             context = rag.get_context(msg.message, max_results=5)
             if context:
                 results = rag.search(msg.message, top_k=5)
@@ -99,48 +114,75 @@ async def chat_stream(msg: ChatMessage):
                     for r in results
                 ]
                 yield f"data: {json.dumps({'type': 'sources', 'sources': sources})}\n\n"
+                yield debug("rag_results", {
+                    "matches": len(results),
+                    "context_length": len(context),
+                    "top_sources": [
+                        f"{r['doc_id']} ({r['score']:.3f})" for r in results[:5]
+                    ],
+                })
+            else:
+                yield debug("rag_results", {"matches": 0, "context_length": 0})
         except Exception as e:
-            context = ""
             yield f"data: {json.dumps({'type': 'rag_error', 'error': str(e)})}\n\n"
+            yield debug("rag_error", {"error": str(e)})
 
         # Build messages
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if context:
             messages[0]["content"] += f"\n\n{context}"
-
-        # Add history (last 10 messages)
         for h in _history[-10:]:
             messages.append(h)
         messages.append({"role": "user", "content": msg.message})
 
+        yield debug("llm_prompt", {
+            "message_count": len(messages),
+            "total_chars": sum(len(m["content"]) for m in messages),
+            "messages": [
+                {"role": m["role"], "content_length": len(m["content"]),
+                 "preview": m["content"][:200] + ("..." if len(m["content"]) > 200 else "")}
+                for m in messages
+            ],
+        })
+
         # Stream from LLM
         try:
             from llama_index.core.llms import ChatMessage as LIChatMessage
-
-            llm = rag._get_index()  # ensures settings are configured
-            llm_instance = rag.config
-            # Use Settings.llm directly
             from llama_index.core import Settings
+            import time
+
+            rag._get_index()  # ensures settings are configured
 
             li_messages = [
                 LIChatMessage(role=m["role"], content=m["content"]) for m in messages
             ]
 
+            yield debug("llm_start", {"status": "Generating response..."})
+            t0 = time.time()
+
             full_response = ""
+            token_count = 0
             response = Settings.llm.stream_chat(li_messages)
             for chunk in response:
                 if chunk and hasattr(chunk, "delta") and chunk.delta:
                     full_response += chunk.delta
+                    token_count += 1
                     yield f"data: {json.dumps({'type': 'content', 'content': chunk.delta})}\n\n"
 
-            # Update history
+            elapsed = time.time() - t0
             _history.append({"role": "user", "content": msg.message})
             _history.append({"role": "assistant", "content": full_response})
 
+            yield debug("llm_done", {
+                "response_length": len(full_response),
+                "chunks": token_count,
+                "elapsed_s": round(elapsed, 2),
+            })
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'error': str(e), 'error_type': type(e).__name__})}\n\n"
+            yield debug("llm_error", {"error": str(e), "type": type(e).__name__})
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 

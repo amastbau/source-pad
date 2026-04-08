@@ -15,14 +15,29 @@
                 <span id="doc-count">...</span> docs indexed
                 <button id="btn-index" title="Index a source">+ Index</button>
                 <button id="btn-clear" title="Clear all">Clear</button>
+                <button id="btn-toggle-trace" title="Toggle trace panel">Trace</button>
             </div>
         </header>
 
-        <div class="chat" id="chat"></div>
+        <div class="main-layout">
+            <div class="chat-area">
+                <div class="chat" id="chat"></div>
 
-        <div class="input-bar">
-            <textarea id="input" placeholder="Ask a question about your code..." rows="1"></textarea>
-            <button id="btn-send">Send</button>
+                <div class="input-bar">
+                    <textarea id="input" placeholder="Ask a question about your code..." rows="1"></textarea>
+                    <button id="btn-send">Send</button>
+                </div>
+            </div>
+
+            <div class="trace-panel" id="trace-panel">
+                <div class="trace-header">
+                    <span>Live Trace</span>
+                    <button class="trace-btn" id="btn-clear-trace" title="Clear">Clear</button>
+                </div>
+                <div class="trace-content" id="trace-content">
+                    <div class="trace-status" id="trace-status">Waiting for query...</div>
+                </div>
+            </div>
         </div>
     </div>
 
