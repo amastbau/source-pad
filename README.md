@@ -6,51 +6,78 @@ Built on [LlamaIndex](https://www.llamaindex.ai/) + [ChromaDB](https://www.trych
 
 ## Quick start
 
-### 1. Start an LLM + embeddings
+### Option A: Container (easiest)
 
-See the [hybrid-llm Getting Started guide](https://github.com/amastbau/hybrid-llm/blob/main/GETTING_STARTED.md) for all options (PC, phone, model selection, Llama Stack).
-
-**Ollama is always required** for embeddings, even when using the phone LLM for chat:
 ```bash
+# 1. Start Ollama (needed for embeddings + chat)
+ollama pull nomic-embed-text
+ollama pull llama3.1:8b
+
+# 2. Run source-pad
+podman run -d --name source-pad \
+  --network host \
+  -v source-pad-data:/app/data \
+  quay.io/amastbau/source-pad:latest
+
+# 3. Open http://localhost:8090
+```
+
+That's it. Use `docker` instead of `podman` if you prefer.
+
+To use the phone LLM instead of Ollama for chat:
+```bash
+podman run -d --name source-pad \
+  --network host \
+  -v source-pad-data:/app/data \
+  -e LLM_PROVIDER=local \
+  -e LOCAL_LLM_URL=http://localhost:8080 \
+  -e LLM_MODEL=gemma-2-2b-it-q4_k_m.gguf \
+  quay.io/amastbau/source-pad:latest
+```
+
+### Option B: From source
+
+```bash
+# 1. Start Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull nomic-embed-text   # required for indexing (always)
 ollama pull llama3.1:8b        # optional — only if using Ollama as your chat LLM
-```
 
-### 2. Install source-pad
-
-```bash
+# 2. Install source-pad
 git clone https://github.com/amastbau/source-pad.git
 cd source-pad
 uv sync
 cp .env.example .env
 # Edit .env if using phone LLM (see below)
+
+# 3. Run
+source-pad serve
+# Open http://localhost:8090
 ```
 
-### 3. Index some code
+See the [hybrid-llm Getting Started guide](https://github.com/amastbau/hybrid-llm/blob/main/GETTING_STARTED.md) for all LLM options (PC, phone, model selection, Llama Stack).
+
+**Ollama is always required** for embeddings, even when using the phone LLM for chat.
+
+### Index some code
 
 ```bash
-# Index this project itself
+# Via the web UI: click "+ Index" and pick GitHub / directory / URL
+
+# Or via CLI (from source install):
 source-pad index dir .
-
-# Index a GitHub repo (needs GITHUB_TOKEN in .env)
 source-pad index github amastbau/hybrid-llm
-source-pad index github amastbau/source-pad
-
-# Crawl a documentation site
 source-pad index url https://docs.example.com --depth 2
 ```
 
-### 4. Ask questions
+### Ask questions
 
 ```bash
-# CLI
+# Web UI at http://localhost:8090
+
+# Or via CLI:
 source-pad query "How does deploy_llm.py deploy a model to the phone?"
 source-pad query "What is the architecture of source-pad?"
-
-# Web UI
-source-pad serve
-# Open http://localhost:8090
 ```
 
 ## Using with hybrid-llm

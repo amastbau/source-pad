@@ -8,6 +8,14 @@ Simple RAG chatbot for code. Works with local LLMs (Ollama or OpenAI-compatible)
 - Build: uv (pyproject.toml, hatchling)
 - Package: src/source_pad/
 
+## Container image
+
+`quay.io/amastbau/source-pad:latest` — built from `Containerfile`, multi-arch.
+
+```bash
+podman run -d --network host -v source-pad-data:/app/data quay.io/amastbau/source-pad:latest
+```
+
 ## Commands
 
 ```bash
