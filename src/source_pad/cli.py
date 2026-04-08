@@ -32,6 +32,15 @@ def cmd_index_dir(args):
     index_directory(rag, args.path)
 
 
+def cmd_index_url(args):
+    from .config import Config
+    from .rag import RAG
+    from .crawler import crawl
+
+    rag = RAG(Config.from_env())
+    crawl(rag, args.url, max_depth=args.depth, max_pages=args.max_pages)
+
+
 def cmd_query(args):
     from .config import Config
     from .rag import RAG
@@ -97,6 +106,12 @@ def main():
     dr = idx_sub.add_parser("dir", help="Index a local directory")
     dr.add_argument("path", help="Path to directory")
     dr.set_defaults(func=cmd_index_dir)
+
+    ur = idx_sub.add_parser("url", help="Crawl and index a URL")
+    ur.add_argument("url", help="URL to crawl")
+    ur.add_argument("--depth", type=int, default=2, help="Max link depth (default: 2)")
+    ur.add_argument("--max-pages", type=int, default=50, help="Max pages (default: 50)")
+    ur.set_defaults(func=cmd_index_url)
 
     # query
     q = sub.add_parser("query", help="Ask a question")

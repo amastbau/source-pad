@@ -29,9 +29,12 @@ document.getElementById('idx-cancel').addEventListener('click', () => dialog.clo
 
 document.querySelectorAll('input[name="idx-type"]').forEach(radio => {
     radio.addEventListener('change', () => {
-        idxInput.placeholder = radio.value === 'github'
-            ? 'owner/repo (e.g. amastbau/hybrid-llm)'
-            : '/path/to/directory';
+        const placeholders = {
+            github: 'owner/repo (e.g. amastbau/hybrid-llm)',
+            dir: '/path/to/directory',
+            crawl: 'https://example.com/docs',
+        };
+        idxInput.placeholder = placeholders[radio.value] || '';
     });
 });
 
@@ -43,8 +46,18 @@ document.getElementById('idx-go').addEventListener('click', async () => {
     dialog.close();
     addMessage('user', `Indexing ${type}: ${value}...`);
 
-    const endpoint = type === 'github' ? '/api/index/github' : '/api/index/directory';
-    const body = type === 'github' ? { repo: value } : { path: value };
+    const endpoints = {
+        github: '/api/index/github',
+        dir: '/api/index/directory',
+        crawl: '/api/index/crawl',
+    };
+    const bodies = {
+        github: { repo: value },
+        dir: { path: value },
+        crawl: { url: value },
+    };
+    const endpoint = endpoints[type];
+    const body = bodies[type];
 
     try {
         const res = await fetch(endpoint, {

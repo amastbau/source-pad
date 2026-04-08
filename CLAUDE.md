@@ -25,6 +25,7 @@ source-pad clear                       # clear index
 - `src/source_pad/config.py`   — Config from env vars (1 flat dataclass)
 - `src/source_pad/rag.py`      — LlamaIndex RAG with ChromaDB
 - `src/source_pad/indexer.py`   — GitHub + local file indexing
+- `src/source_pad/crawler.py`   — Web crawler (follows links to configurable depth)
 - `src/source_pad/web.py`       — FastAPI server (7 endpoints)
 - `src/source_pad/cli.py`       — CLI entry point
 - `static/`                     — Frontend (HTML/CSS/JS)

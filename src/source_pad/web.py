@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from .config import Config
 from .rag import RAG
 from .indexer import index_github, index_directory
+from .crawler import crawl
 
 app = FastAPI(title="source-pad", version="0.1.0")
 
@@ -48,6 +49,12 @@ class IndexGithubRequest(BaseModel):
 
 class IndexDirRequest(BaseModel):
     path: str
+
+
+class CrawlRequest(BaseModel):
+    url: str
+    max_depth: int = 2
+    max_pages: int = 50
 
 
 # --- Routes ---
@@ -153,6 +160,13 @@ async def api_index_dir(req: IndexDirRequest):
     rag = get_rag()
     count = index_directory(rag, req.path)
     return {"indexed": count, "path": req.path}
+
+
+@app.post("/api/index/crawl")
+async def api_crawl(req: CrawlRequest):
+    rag = get_rag()
+    count = crawl(rag, req.url, max_depth=req.max_depth, max_pages=req.max_pages)
+    return {"indexed": count, "url": req.url}
 
 
 @app.post("/api/clear")

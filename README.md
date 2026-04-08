@@ -42,6 +42,9 @@ source-pad index dir .
 # Index a GitHub repo (needs GITHUB_TOKEN in .env)
 source-pad index github amastbau/hybrid-llm
 source-pad index github amastbau/source-pad
+
+# Crawl a documentation site
+source-pad index url https://docs.example.com --depth 2
 ```
 
 ### 4. Ask questions
@@ -120,6 +123,7 @@ source-pad serve
 ```
 source-pad index github <owner/repo>   Index a GitHub repo
 source-pad index dir <path>            Index a local directory
+source-pad index url <url>             Crawl and index a URL
 source-pad query "question"            Ask a question (CLI)
 source-pad serve                       Start the web UI
 source-pad stats                       Show index stats
