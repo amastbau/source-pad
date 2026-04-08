@@ -8,18 +8,10 @@ Built on [LlamaIndex](https://www.llamaindex.ai/) + [ChromaDB](https://www.trych
 
 ### 1. Start an LLM
 
-**Option A: Ollama on your PC** (recommended)
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.1:8b        # chat model
-ollama pull nomic-embed-text   # embedding model (required for indexing)
-```
+See the [hybrid-llm Getting Started guide](https://github.com/amastbau/hybrid-llm/blob/main/GETTING_STARTED.md) for all options (PC, phone, model selection, Llama Stack).
 
-**Option B: Phone via hybrid-llm**
-
-See the [hybrid-llm Getting Started guide](https://github.com/amastbau/hybrid-llm/blob/main/GETTING_STARTED.md) for phone setup, then:
+source-pad also needs an embedding model via Ollama:
 ```bash
-# Ollama still needed on PC for embeddings:
 ollama pull nomic-embed-text
 ```
 
