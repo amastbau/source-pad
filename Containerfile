@@ -13,8 +13,9 @@ COPY static/ static/
 # Install dependencies
 RUN uv sync --no-dev
 
-# Data volume for ChromaDB persistence
-VOLUME /app/data
+# Bake in pre-indexed vector DB (source-pad project itself)
+# Re-index at runtime with: source-pad index dir /your/code
+COPY data/chroma/ /app/data/chroma/
 
 ENV CHROMA_PATH=/app/data/chroma
 ENV HOST=0.0.0.0

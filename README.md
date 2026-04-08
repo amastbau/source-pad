@@ -22,7 +22,7 @@ podman run -d --name source-pad \
 # 3. Open http://localhost:8090
 ```
 
-That's it. Use `docker` instead of `podman` if you prefer.
+That's it. The image comes with the source-pad project itself already indexed — you can start asking questions immediately. Use `docker` instead of `podman` if you prefer.
 
 To use the phone LLM instead of Ollama for chat:
 ```bash
